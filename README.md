@@ -63,6 +63,7 @@ Copy `.env.example` thanh `.env` khi chay local.
 | Variable | Required | Example | Purpose |
 |---|---|---|---|
 | `DATABASE_URL` | Yes | `postgresql://...` | PostgreSQL connection string cho Prisma |
+| `DATABASE_URL_UNPOOLED` | Yes | `postgresql://...` | Direct non-pooled connection string cho `prisma migrate deploy` |
 | `APP_ENV` | Yes | `development` / `production` | Dieu khien secure cookie va logging mode |
 | `DEFAULT_SITE_DOMAIN` | Yes | `alpha.localhost:3000` | Host fallback de resolve tenant va canonical |
 | `SESSION_COOKIE_NAME` | Yes | `cms_admin_session` | Ten cookie session admin |
@@ -178,6 +179,7 @@ npm run check
 Set cac env vars sau cho Production va Preview neu can:
 
 - `DATABASE_URL`
+- `DATABASE_URL_UNPOOLED`
 - `APP_ENV=production`
 - `DEFAULT_SITE_DOMAIN`
 - `SESSION_COOKIE_NAME`
@@ -357,6 +359,7 @@ npm run prisma:studio
 
 - [ ] PostgreSQL production da san sang
 - [ ] `DATABASE_URL` dung cho production
+- [ ] `DATABASE_URL_UNPOOLED` dung cho Prisma migrate tren direct connection
 - [ ] `SESSION_SECRET` da la chuoi random dai, khong dung gia tri demo
 - [ ] `APP_ENV=production`
 - [ ] `DEFAULT_SITE_DOMAIN` trung voi domain chinh
