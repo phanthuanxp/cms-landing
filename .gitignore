@@ -1,0 +1,42 @@
+# dependencies
+node_modules/
+
+# environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# next.js
+.next/
+out/
+
+# build outputs
+dist/
+build/
+
+# coverage
+coverage/
+.nyc_output/
+
+# logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# prisma / generated
+prisma/dev.db
+prisma/dev.db-journal
+
+# editor / os
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# misc
+*.tsbuildinfo

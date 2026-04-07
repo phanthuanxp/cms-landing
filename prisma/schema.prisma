@@ -1,0 +1,455 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GlobalRole {
+  SUPER_ADMIN
+  USER
+}
+
+enum TenantMemberRole {
+  TENANT_ADMIN
+  EDITOR
+}
+
+enum TenantStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PageType {
+  HOME
+  LANDING
+  ABOUT
+  SERVICE
+  CONTACT
+  CUSTOM
+}
+
+enum PageBlockType {
+  HERO
+  FEATURE_LIST
+  RICH_TEXT
+  IMAGE
+  CTA
+  TESTIMONIALS
+  FAQ
+  CONTACT_FORM
+  CUSTOM
+}
+
+enum MenuLocation {
+  PRIMARY
+  HEADER
+  FOOTER
+  LEGAL
+  MOBILE
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  WON
+  SPAM
+  ARCHIVED
+}
+
+enum MediaStatus {
+  DRAFT
+  READY
+  ARCHIVED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  PUBLISH
+  LOGIN
+  LOGOUT
+}
+
+model User {
+  id                String             @id @default(cuid())
+  email             String             @unique
+  passwordHash      String
+  name              String
+  avatarUrl         String?
+  globalRole        GlobalRole         @default(USER)
+  isActive          Boolean            @default(true)
+  lastLoginAt       DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
+  createdById       String?
+  updatedById       String?
+  tenantMemberships TenantMembership[]
+  authoredBlogPosts BlogPost[]         @relation("BlogPostAuthor")
+  authSessions      AuthSession[]
+  auditLogs         AuditLog[]         @relation("AuditActor")
+
+  @@index([deletedAt])
+}
+
+model Tenant {
+  id                String             @id @default(cuid())
+  slug              String             @unique
+  status            TenantStatus       @default(ACTIVE)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
+  createdById       String?
+  updatedById       String?
+  domains           TenantDomain[]
+  siteSettings      SiteSettings?
+  tenantMemberships TenantMembership[]
+  pages             Page[]
+  pageBlocks        PageBlock[]
+  blogCategories    BlogCategory[]
+  blogPosts         BlogPost[]
+  blogTags          BlogTag[]
+  blogPostTags      BlogPostTag[]
+  leads             Lead[]
+  menus             Menu[]
+  menuItems         MenuItem[]
+  mediaAssets       MediaAsset[]
+  authSessions      AuthSession[]
+  auditLogs         AuditLog[]
+
+  @@index([status, deletedAt])
+}
+
+model TenantMembership {
+  id          String           @id @default(cuid())
+  tenantId    String
+  userId      String
+  role        TenantMemberRole
+  isDefault   Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([userId, role, deletedAt])
+  @@index([tenantId, deletedAt])
+}
+
+model AuthSession {
+  id             String    @id @default(cuid())
+  userId         String
+  tenantId       String?
+  tokenHash      String    @unique
+  expiresAt      DateTime
+  lastSeenAt     DateTime  @default(now())
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  revokedAt      DateTime?
+  createdById    String?
+  updatedById    String?
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant         Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([userId, expiresAt])
+  @@index([tenantId])
+}
+
+model TenantDomain {
+  id                String   @id @default(cuid())
+  tenantId          String
+  host              String   @unique
+  isPrimary         Boolean  @default(false)
+  isActive          Boolean  @default(true)
+  redirectToPrimary Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime?
+  createdById       String?
+  updatedById       String?
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, isPrimary, isActive, deletedAt])
+}
+
+model SiteSettings {
+  id                    String   @id @default(cuid())
+  tenantId              String   @unique
+  siteName              String
+  siteTagline           String?
+  logoUrl               String?
+  faviconUrl            String?
+  defaultSeoTitle       String
+  defaultSeoDescription String
+  defaultOgImageUrl     String?
+  businessName          String?
+  businessEmail         String?
+  businessPhone         String?
+  businessAddress       String?
+  businessDescription   String?
+  socialLinks           Json?
+  themeSettings         Json?
+  locale                String   @default("vi-VN")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  deletedAt             DateTime?
+  createdById           String?
+  updatedById           String?
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([deletedAt])
+}
+
+model Page {
+  id             String        @id @default(cuid())
+  tenantId       String
+  title          String
+  slug           String
+  summary        String?
+  pageType       PageType      @default(CUSTOM)
+  status         PublishStatus @default(DRAFT)
+  seoTitle       String?
+  seoDescription String?
+  ogImageUrl     String?
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
+  createdById    String?
+  updatedById    String?
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  blocks         PageBlock[]
+  leads          Lead[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status, pageType, deletedAt])
+}
+
+model PageBlock {
+  id          String        @id @default(cuid())
+  tenantId    String
+  pageId      String
+  blockType   PageBlockType
+  position    Int
+  isEnabled   Boolean       @default(true)
+  payload     Json
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  page        Page          @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, position])
+  @@index([tenantId, pageId, blockType, deletedAt])
+}
+
+model BlogCategory {
+  id             String     @id @default(cuid())
+  tenantId       String
+  name           String
+  slug           String
+  description    String?
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  deletedAt      DateTime?
+  createdById    String?
+  updatedById    String?
+  tenant         Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  posts          BlogPost[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, deletedAt])
+}
+
+model BlogPost {
+  id             String        @id @default(cuid())
+  tenantId       String
+  categoryId     String
+  authorId       String
+  title          String
+  slug           String
+  excerpt        String?
+  content        String        @db.Text
+  featuredImage  String?
+  seoTitle       String?
+  seoDescription String?
+  status         PublishStatus @default(DRAFT)
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
+  createdById    String?
+  updatedById    String?
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category       BlogCategory  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  author         User          @relation("BlogPostAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  tagLinks       BlogPostTag[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, categoryId, status, publishedAt, deletedAt])
+  @@index([authorId])
+}
+
+model BlogTag {
+  id          String       @id @default(cuid())
+  tenantId    String
+  name        String
+  slug        String
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  postLinks   BlogPostTag[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, deletedAt])
+}
+
+model BlogPostTag {
+  id           String    @id @default(cuid())
+  tenantId     String
+  blogPostId   String
+  blogTagId    String
+  createdAt    DateTime  @default(now())
+  createdById  String?
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  blogPost     BlogPost  @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  blogTag      BlogTag   @relation(fields: [blogTagId], references: [id], onDelete: Cascade)
+
+  @@unique([blogPostId, blogTagId])
+  @@index([tenantId, blogTagId])
+}
+
+model Lead {
+  id          String      @id @default(cuid())
+  tenantId    String
+  pageId      String?
+  name        String
+  email       String?
+  phone       String?
+  company     String?
+  message     String?
+  sourcePath  String?
+  sourceHost  String?
+  metadata    Json?
+  status      LeadStatus  @default(NEW)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  page        Page?       @relation(fields: [pageId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status, createdAt, deletedAt])
+}
+
+model Menu {
+  id          String       @id @default(cuid())
+  tenantId    String
+  name        String
+  slug        String
+  location    MenuLocation @default(PRIMARY)
+  description String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items       MenuItem[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, location, isActive, deletedAt])
+}
+
+model MenuItem {
+  id          String    @id @default(cuid())
+  tenantId    String
+  menuId      String
+  parentId    String?
+  label       String
+  href        String
+  target      String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  menu        Menu      @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent      MenuItem? @relation("MenuItemTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    MenuItem[] @relation("MenuItemTree")
+
+  @@index([tenantId, menuId, sortOrder, deletedAt])
+  @@index([parentId])
+}
+
+model MediaAsset {
+  id          String      @id @default(cuid())
+  tenantId    String
+  name        String
+  storageKey  String?
+  url         String
+  alt         String?
+  mimeType    String?
+  sizeBytes   Int?
+  width       Int?
+  height      Int?
+  status      MediaStatus @default(DRAFT)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status, deletedAt])
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  tenantId    String?
+  actorUserId String?
+  action      AuditAction
+  entityType  String
+  entityId    String
+  summary     String?
+  before      Json?
+  after       Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime    @default(now())
+  tenant      Tenant?     @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  actor       User?       @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, entityType, entityId, createdAt])
+  @@index([actorUserId, createdAt])
+}
