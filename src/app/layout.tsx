@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import "@/app/globals.css";
+import { getLocaleFromCookie } from "@/lib/i18n";
 
 const geistSans = Geist({
   subsets: ["latin", "latin-ext"],
@@ -18,13 +19,15 @@ export const metadata: Metadata = {
   description: "Production-ready multi-tenant CMS with Next.js, Prisma and PostgreSQL."
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocaleFromCookie();
+
   return (
-    <html lang="vi" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang={locale} className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="antialiased">{children}</body>
     </html>
   );

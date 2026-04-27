@@ -7,6 +7,7 @@ import { AdminStatusBadge } from "@/components/admin/status-badge";
 import { TenantPicker } from "@/components/admin/tenant-picker";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { getLocaleFromCookie, getTranslations } from "@/lib/i18n";
 import { formatDate, parseEnumSearchParam } from "@/lib/utils";
 import { requireAuth } from "@/server/auth/session";
 import { requireTenantAccess } from "@/server/auth/permissions";
@@ -19,12 +20,14 @@ type Props = {
 
 export default async function LeadsPage({ searchParams }: Props) {
   const user = await requireAuth("/admin/leads");
+  const locale = await getLocaleFromCookie();
+  const t = getTranslations(locale);
   const rawParams = await searchParams;
   const params = parseListParams(rawParams);
   const { tenants, selectedTenant } = await resolveAdminTenant(user, params.tenantId || undefined);
 
   if (!selectedTenant) {
-    return <EmptyState description="Tai khoan nay chua duoc gan tenant nao." title="Khong co tenant" />;
+    return <EmptyState description={t.pages.noTenantDescription} title={t.pages.noTenant} />;
   }
 
   await requireTenantAccess(selectedTenant.id, {
@@ -73,15 +76,16 @@ export default async function LeadsPage({ searchParams }: Props) {
     <div className="space-y-6">
       <AdminPageHeader
         actions={<TenantPicker selectedTenantId={selectedTenant.id} tenants={tenants} />}
-        description="Danh sach lead chi doc, co search, filter va pagination theo tenant scope."
-        eyebrow="CRM"
-        title="Leads"
+        description={t.leads.description}
+        eyebrow={t.leads.eyebrow}
+        title={t.leads.title}
       />
 
       <DataTableToolbar
         q={params.q}
         status={params.status}
         tenantId={selectedTenant.id}
+        searchPlaceholder={t.searchToolbar.placeholder}
         statusOptions={Object.values(LeadStatus).map((status) => ({ value: status, label: status }))}
       />
 
@@ -89,11 +93,11 @@ export default async function LeadsPage({ searchParams }: Props) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <TableHead>{t.table.name}</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Company</TableHead>
               <TableHead>Source</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>{t.table.status}</TableHead>
               <TableHead>Created</TableHead>
             </TableRow>
           </TableHeader>
@@ -101,7 +105,7 @@ export default async function LeadsPage({ searchParams }: Props) {
             {leads.length === 0 ? (
               <TableRow>
                 <TableCell className="p-0" colSpan={6}>
-                  <EmptyState description="Chua co lead nao khop voi bo loc hien tai." title="Khong co lead" />
+                  <EmptyState description={t.leads.emptyDescription} title={t.leads.emptyTitle} />
                 </TableCell>
               </TableRow>
             ) : (
@@ -110,7 +114,7 @@ export default async function LeadsPage({ searchParams }: Props) {
                   <TableCell>
                     <div className="space-y-1">
                       <p className="font-medium text-stone-950">{lead.name}</p>
-                      <p className="text-xs text-stone-500">{lead.message ?? "Khong co ghi chu"}</p>
+                      <p className="text-xs text-stone-500">{lead.message ?? t.leads.noMessage}</p>
                     </div>
                   </TableCell>
                   <TableCell>{lead.email ?? lead.phone ?? "N/A"}</TableCell>

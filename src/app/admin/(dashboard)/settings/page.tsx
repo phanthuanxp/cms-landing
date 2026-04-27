@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
+import { getLocaleFromCookie, getTranslations } from "@/lib/i18n";
 import { requireAuth } from "@/server/auth/session";
 import { requireTenantAccess } from "@/server/auth/permissions";
 import { resolveAdminTenant as resolveTenantList } from "@/server/queries/admin";
@@ -19,12 +20,14 @@ type Props = {
 
 export default async function SettingsPage({ searchParams }: Props) {
   const user = await requireAuth("/admin/settings");
+  const locale = await getLocaleFromCookie();
+  const t = getTranslations(locale);
   const params = await searchParams;
   const tenantId = typeof params.tenantId === "string" ? params.tenantId : undefined;
   const { tenants, selectedTenant } = await resolveTenantList(user, tenantId);
 
   if (!selectedTenant) {
-    return <EmptyState description="Tai khoan nay chua duoc gan tenant nao." title="Khong co tenant" />;
+    return <EmptyState description={t.pages.noTenantDescription} title={t.pages.noTenant} />;
   }
 
   const access = await requireTenantAccess(selectedTenant.id, {
@@ -38,9 +41,9 @@ export default async function SettingsPage({ searchParams }: Props) {
     <div className="space-y-6">
       <AdminPageHeader
         actions={<TenantPicker selectedTenantId={selectedTenant.id} tenants={tenants} />}
-        description="Quan ly site metadata, business info, social links va giao dien co ban cho tenant hien tai."
-        eyebrow="Tenant"
-        title="Site Settings"
+        description={t.settings.description}
+        eyebrow={t.settings.eyebrow}
+        title={t.settings.title}
       />
       <AdminFormSection title={settings?.siteName ?? access.tenant.slug}>
         <form action={updateSiteSettingsAction} className="grid gap-4 lg:grid-cols-2">
@@ -124,7 +127,7 @@ export default async function SettingsPage({ searchParams }: Props) {
           </div>
 
           <div className="lg:col-span-2">
-            <SubmitButton>Luu settings</SubmitButton>
+            <SubmitButton>{t.common.save}</SubmitButton>
           </div>
         </form>
       </AdminFormSection>

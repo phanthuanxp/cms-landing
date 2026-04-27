@@ -16,6 +16,7 @@ import { Select } from "@/components/ui/select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { getLocaleFromCookie, getTranslations } from "@/lib/i18n";
 import { requireRole } from "@/server/auth/permissions";
 import { parseListParams, buildPagination } from "@/server/queries/admin";
 import { db } from "@/server/db/client";
@@ -27,6 +28,8 @@ type Props = {
 
 export default async function SitesPage({ searchParams }: Props) {
   await requireRole(GlobalRole.SUPER_ADMIN, "/admin/sites");
+  const locale = await getLocaleFromCookie();
+  const t = getTranslations(locale);
   const rawParams = await searchParams;
   const params = parseListParams(rawParams);
   const editId = typeof rawParams.edit === "string" ? rawParams.edit : undefined;
@@ -94,17 +97,18 @@ export default async function SitesPage({ searchParams }: Props) {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        description="Super admin quan ly tenants, domains va pham vi he thong tai mot noi. Domain primary/secondary deu duoc kiem soat tai day."
-        eyebrow="System"
-        title="Tenants & Domains"
+        description={t.sites.description}
+        eyebrow={t.sites.eyebrow}
+        title={t.sites.title}
       />
 
       <DataTableToolbar
         q={params.q}
         status={params.status}
+        searchPlaceholder={t.searchToolbar.placeholder}
         statusOptions={[
-          { value: TenantStatus.ACTIVE, label: "Active" },
-          { value: TenantStatus.INACTIVE, label: "Inactive" },
+          { value: TenantStatus.ACTIVE, label: t.status.active },
+          { value: TenantStatus.INACTIVE, label: t.status.inactive },
           { value: TenantStatus.SUSPENDED, label: "Suspended" }
         ]}
       />
@@ -116,18 +120,18 @@ export default async function SitesPage({ searchParams }: Props) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Site</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Primary Domain</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t.table.slug}</TableHead>
+                  <TableHead>{t.table.status}</TableHead>
+                  <TableHead>{t.table.primary} {t.table.domain}</TableHead>
+                  <TableHead>{t.table.updated}</TableHead>
+                  <TableHead className="text-right">{t.table.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {tenants.length === 0 ? (
                   <TableRow>
                     <TableCell className="p-0" colSpan={6}>
-                      <EmptyState description="Chua co tenant nao khop voi bo loc hien tai." title="Khong co tenant" />
+                      <EmptyState description={t.sites.emptyDescription} title={t.sites.emptyTitle} />
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -148,12 +152,12 @@ export default async function SitesPage({ searchParams }: Props) {
                       <TableCell>
                         <div className="flex justify-end gap-2">
                           <Button asChild size="sm" variant="outline">
-                            <Link href={`/admin/sites?edit=${tenant.id}`}>Sua</Link>
+                            <Link href={`/admin/sites?edit=${tenant.id}`}>{t.common.edit}</Link>
                           </Button>
                           <form action={softDeleteTenantAction}>
                             <input name="tenantId" type="hidden" value={tenant.id} />
-                            <ConfirmSubmitButton size="sm" variant="destructive">
-                              Xoa
+                            <ConfirmSubmitButton confirmationMessage={t.confirmDialog.defaultMessage} size="sm" variant="destructive">
+                              {t.common.delete}
                             </ConfirmSubmitButton>
                           </form>
                         </div>
@@ -170,8 +174,8 @@ export default async function SitesPage({ searchParams }: Props) {
 
         <div className="space-y-6">
           <AdminFormSection
-            description="Form tao/sua tenant toi thieu. Site settings chi tiet hon duoc cap nhat tai module Settings."
-            title={selectedTenant ? "Chinh sua tenant" : "Tao tenant moi"}
+            description={t.sites.formDescription}
+            title={selectedTenant ? t.sites.editTitle : t.sites.createTitle}
           >
             <form action={upsertTenantAction} className="space-y-4">
               <input name="tenantId" type="hidden" value={selectedTenant?.id ?? ""} />
@@ -181,11 +185,11 @@ export default async function SitesPage({ searchParams }: Props) {
                   <Input defaultValue={selectedTenant?.siteSettings?.siteName ?? ""} id="siteName" name="siteName" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="slug">Slug</Label>
+                  <Label htmlFor="slug">{t.table.slug}</Label>
                   <Input defaultValue={selectedTenant?.slug ?? ""} id="slug" name="slug" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
+                  <Label htmlFor="status">{t.table.status}</Label>
                   <Select defaultValue={selectedTenant?.status ?? TenantStatus.ACTIVE} id="status" name="status">
                     {Object.values(TenantStatus).map((status) => (
                       <option key={status} value={status}>
@@ -213,28 +217,28 @@ export default async function SitesPage({ searchParams }: Props) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <SubmitButton>Luu tenant</SubmitButton>
+                <SubmitButton>{t.common.save}</SubmitButton>
                 <Button asChild type="button" variant="ghost">
-                  <Link href="/admin/sites">Tao moi</Link>
+                  <Link href="/admin/sites">{t.common.create}</Link>
                 </Button>
               </div>
             </form>
           </AdminFormSection>
 
           <AdminFormSection
-            description="Them, xoa va chon primary domain cho tenant dang duoc mo."
-            title="Domain manager"
+            description={t.sites.domainsDescription}
+            title={t.sites.domainsTitle}
           >
             {selectedTenant ? (
               <div className="space-y-4">
                 <form action={addDomainAction} className="flex gap-2">
                   <input name="tenantId" type="hidden" value={selectedTenant.id} />
                   <Input name="host" placeholder="alpha.lvh.me" />
-                  <SubmitButton>Them</SubmitButton>
+                  <SubmitButton>{t.common.create}</SubmitButton>
                 </form>
                 <div className="space-y-2">
                   {selectedTenant.domains.length === 0 ? (
-                    <EmptyState description="Tenant nay chua co domain nao." title="Chua co domain" />
+                    <EmptyState description={t.sites.noDomainsDescription} title={t.sites.noDomainsTitle} />
                   ) : (
                     selectedTenant.domains.map((domain) => (
                       <div
@@ -243,7 +247,7 @@ export default async function SitesPage({ searchParams }: Props) {
                       >
                         <div className="space-y-1">
                           <p className="font-medium text-stone-950">{domain.host}</p>
-                          <p className="text-xs text-stone-500">{domain.isPrimary ? "Primary domain" : "Secondary domain"}</p>
+                          <p className="text-xs text-stone-500">{domain.isPrimary ? `${t.table.primary} domain` : "Secondary domain"}</p>
                         </div>
                         <div className="flex gap-2">
                           {!domain.isPrimary ? (
@@ -251,15 +255,15 @@ export default async function SitesPage({ searchParams }: Props) {
                               <input name="tenantId" type="hidden" value={selectedTenant.id} />
                               <input name="domainId" type="hidden" value={domain.id} />
                               <Button size="sm" type="submit" variant="outline">
-                                Dat primary
+                                {t.table.primary}
                               </Button>
                             </form>
                           ) : null}
                           <form action={softDeleteDomainAction}>
                             <input name="tenantId" type="hidden" value={selectedTenant.id} />
                             <input name="domainId" type="hidden" value={domain.id} />
-                            <ConfirmSubmitButton size="sm" variant="destructive">
-                              Xoa
+                            <ConfirmSubmitButton confirmationMessage={t.confirmDialog.defaultMessage} size="sm" variant="destructive">
+                              {t.common.delete}
                             </ConfirmSubmitButton>
                           </form>
                         </div>
@@ -269,7 +273,7 @@ export default async function SitesPage({ searchParams }: Props) {
                 </div>
               </div>
             ) : (
-              <EmptyState description="Hay tao tenant truoc khi quan ly domains." title="Chua co tenant" />
+              <EmptyState description={t.sites.noTenantForDomainsDescription} title={t.sites.noTenantForDomains} />
             )}
           </AdminFormSection>
         </div>
