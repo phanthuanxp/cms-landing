@@ -17,7 +17,8 @@ import { Select } from "@/components/ui/select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { DEFAULT_PAGE_BLOCKS } from "@/lib/constants";
+import { getDefaultPageBlocks } from "@/lib/constants";
+import { getLocaleFromCookie, getTranslations } from "@/lib/i18n";
 import { formatDate, parseEnumSearchParam } from "@/lib/utils";
 import { requireTenantAccess } from "@/server/auth/permissions";
 import { requireAuth } from "@/server/auth/session";
@@ -30,13 +31,15 @@ type Props = {
 
 export default async function PagesPage({ searchParams }: Props) {
   const user = await requireAuth("/admin/pages");
+  const locale = await getLocaleFromCookie();
+  const t = getTranslations(locale);
   const rawParams = await searchParams;
   const params = parseListParams(rawParams);
   const editId = typeof rawParams.edit === "string" ? rawParams.edit : undefined;
   const { tenants, selectedTenant } = await resolveAdminTenant(user, params.tenantId || undefined);
 
   if (!selectedTenant) {
-    return <EmptyState description="Tai khoan nay chua duoc gan tenant nao." title="Khong co tenant" />;
+    return <EmptyState description={t.pages.noTenantDescription} title={t.pages.noTenant} />;
   }
 
   await requireTenantAccess(selectedTenant.id, {
@@ -108,23 +111,26 @@ export default async function PagesPage({ searchParams }: Props) {
   if (params.q) filterParams.set("q", params.q);
   if (params.status) filterParams.set("status", params.status);
 
+  const defaultBlocks = getDefaultPageBlocks(t.defaultBlocks);
+
   return (
     <div className="space-y-6">
       <AdminPageHeader
         actions={<TenantPicker selectedTenantId={selectedTenant.id} tenants={tenants} />}
-        description="Quan ly landing pages theo tenant voi blocks JSON co validation server-side."
-        eyebrow="Content"
-        title="Pages"
+        description={t.pages.description}
+        eyebrow={t.pages.eyebrow}
+        title={t.pages.title}
       />
 
       <DataTableToolbar
         q={params.q}
         status={params.status}
         tenantId={selectedTenant.id}
+        searchPlaceholder={t.searchToolbar.placeholder}
         statusOptions={[
-          { value: PublishStatus.DRAFT, label: "Draft" },
-          { value: PublishStatus.PUBLISHED, label: "Published" },
-          { value: PublishStatus.ARCHIVED, label: "Archived" }
+          { value: PublishStatus.DRAFT, label: t.status.draft },
+          { value: PublishStatus.PUBLISHED, label: t.status.published },
+          { value: PublishStatus.ARCHIVED, label: t.status.archived }
         ]}
       />
 
@@ -134,19 +140,19 @@ export default async function PagesPage({ searchParams }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t.table.title}</TableHead>
+                  <TableHead>{t.table.slug}</TableHead>
+                  <TableHead>{t.table.status}</TableHead>
                   <TableHead>Blocks</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t.table.updated}</TableHead>
+                  <TableHead className="text-right">{t.table.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {pages.length === 0 ? (
                   <TableRow>
                     <TableCell className="p-0" colSpan={6}>
-                      <EmptyState description="Chua co landing page nao khop voi bo loc hien tai." title="Khong co page" />
+                      <EmptyState description={t.pages.emptyDescription} title={t.pages.emptyTitle} />
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -167,13 +173,13 @@ export default async function PagesPage({ searchParams }: Props) {
                       <TableCell>
                         <div className="flex justify-end gap-2">
                           <Button asChild size="sm" variant="outline">
-                            <Link href={`/admin/pages?tenantId=${selectedTenant.id}&edit=${page.id}`}>Sua</Link>
+                            <Link href={`/admin/pages?tenantId=${selectedTenant.id}&edit=${page.id}`}>{t.common.edit}</Link>
                           </Button>
                           <form action={softDeleteLandingPageAction}>
                             <input name="tenantId" type="hidden" value={selectedTenant.id} />
                             <input name="pageId" type="hidden" value={page.id} />
-                            <ConfirmSubmitButton size="sm" variant="destructive">
-                              Xoa
+                            <ConfirmSubmitButton confirmationMessage={t.confirmDialog.defaultMessage} size="sm" variant="destructive">
+                              {t.common.delete}
                             </ConfirmSubmitButton>
                           </form>
                         </div>
@@ -189,19 +195,19 @@ export default async function PagesPage({ searchParams }: Props) {
         </div>
 
         <AdminFormSection
-          description="Blocks dung JSON array theo schema cac block co ban. Ban co the bat dau tu mau mac dinh roi tinh chinh dan."
-          title={selectedPage ? "Chinh sua page" : "Tao page moi"}
+          description={t.pages.formDescription}
+          title={selectedPage ? t.pages.editTitle : t.pages.createTitle}
         >
           <form action={upsertLandingPageAction} className="space-y-4">
             <input name="tenantId" type="hidden" value={selectedTenant.id} />
             <input name="pageId" type="hidden" value={selectedPage?.id ?? ""} />
 
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">{t.table.title}</Label>
               <Input defaultValue={selectedPage?.title ?? ""} id="title" name="title" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
+              <Label htmlFor="slug">{t.table.slug}</Label>
               <Input defaultValue={selectedPage?.slug ?? ""} id="slug" name="slug" />
             </div>
             <div className="space-y-2">
@@ -220,7 +226,7 @@ export default async function PagesPage({ searchParams }: Props) {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">{t.table.status}</Label>
                 <Select defaultValue={selectedPage?.status ?? PublishStatus.DRAFT} id="status" name="status">
                   {Object.values(PublishStatus).map((status) => (
                     <option key={status} value={status}>
@@ -246,7 +252,7 @@ export default async function PagesPage({ searchParams }: Props) {
               <Label htmlFor="blocks">Blocks JSON</Label>
               <Textarea
                 defaultValue={JSON.stringify(
-                  selectedPage?.blocks.map((block) => block.payload) ?? DEFAULT_PAGE_BLOCKS,
+                  selectedPage?.blocks.map((block) => block.payload) ?? defaultBlocks,
                   null,
                   2
                 )}
@@ -256,9 +262,9 @@ export default async function PagesPage({ searchParams }: Props) {
               />
             </div>
             <div className="flex items-center gap-2">
-              <SubmitButton>Luu page</SubmitButton>
+              <SubmitButton>{t.common.save}</SubmitButton>
               <Button asChild type="button" variant="ghost">
-                <Link href={`/admin/pages?tenantId=${selectedTenant.id}`}>Tao moi</Link>
+                <Link href={`/admin/pages?tenantId=${selectedTenant.id}`}>{t.common.create}</Link>
               </Button>
             </div>
           </form>

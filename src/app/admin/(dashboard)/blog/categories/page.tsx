@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { getLocaleFromCookie, getTranslations } from "@/lib/i18n";
 import { formatDate } from "@/lib/utils";
 import { requireAuth } from "@/server/auth/session";
 import { requireTenantAccess } from "@/server/auth/permissions";
@@ -27,13 +28,15 @@ type Props = {
 
 export default async function BlogCategoriesPage({ searchParams }: Props) {
   const user = await requireAuth("/admin/blog/categories");
+  const locale = await getLocaleFromCookie();
+  const t = getTranslations(locale);
   const rawParams = await searchParams;
   const params = parseListParams(rawParams);
   const editId = typeof rawParams.edit === "string" ? rawParams.edit : undefined;
   const { tenants, selectedTenant } = await resolveAdminTenant(user, params.tenantId || undefined);
 
   if (!selectedTenant) {
-    return <EmptyState description="Tai khoan nay chua duoc gan tenant nao." title="Khong co tenant" />;
+    return <EmptyState description={t.pages.noTenantDescription} title={t.pages.noTenant} />;
   }
 
   await requireTenantAccess(selectedTenant.id, {
@@ -84,12 +87,12 @@ export default async function BlogCategoriesPage({ searchParams }: Props) {
     <div className="space-y-6">
       <AdminPageHeader
         actions={<TenantPicker selectedTenantId={selectedTenant.id} tenants={tenants} />}
-        description="CRUD day du cho blog categories theo tenant, slug unique trong pham vi tenant."
-        eyebrow="Blog"
-        title="Categories"
+        description={t.blog.categoriesDescription}
+        eyebrow={t.blog.categoriesEyebrow}
+        title={t.blog.categoriesTitle}
       />
 
-      <DataTableToolbar q={params.q} tenantId={selectedTenant.id} />
+      <DataTableToolbar q={params.q} tenantId={selectedTenant.id} searchPlaceholder={t.searchToolbar.placeholder} />
 
       <div className="grid gap-6 xl:grid-cols-[1.7fr,1fr]">
         <div className="space-y-4">
@@ -97,18 +100,18 @@ export default async function BlogCategoriesPage({ searchParams }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t.table.name}</TableHead>
+                  <TableHead>{t.table.slug}</TableHead>
+                  <TableHead>{t.table.description}</TableHead>
+                  <TableHead>{t.table.updated}</TableHead>
+                  <TableHead className="text-right">{t.table.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {categories.length === 0 ? (
                   <TableRow>
                     <TableCell className="p-0" colSpan={5}>
-                      <EmptyState description="Chua co category nao khop voi bo loc hien tai." title="Khong co category" />
+                      <EmptyState description={t.blog.emptyCategoriesDescription} title={t.blog.emptyCategoriesTitle} />
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -121,13 +124,13 @@ export default async function BlogCategoriesPage({ searchParams }: Props) {
                       <TableCell>
                         <div className="flex justify-end gap-2">
                           <Button asChild size="sm" variant="outline">
-                            <Link href={`/admin/blog/categories?tenantId=${selectedTenant.id}&edit=${category.id}`}>Sua</Link>
+                            <Link href={`/admin/blog/categories?tenantId=${selectedTenant.id}&edit=${category.id}`}>{t.common.edit}</Link>
                           </Button>
                           <form action={softDeleteCategoryAction}>
                             <input name="tenantId" type="hidden" value={selectedTenant.id} />
                             <input name="categoryId" type="hidden" value={category.id} />
-                            <ConfirmSubmitButton size="sm" variant="destructive">
-                              Xoa
+                            <ConfirmSubmitButton confirmationMessage={t.confirmDialog.defaultMessage} size="sm" variant="destructive">
+                              {t.common.delete}
                             </ConfirmSubmitButton>
                           </form>
                         </div>
@@ -141,26 +144,26 @@ export default async function BlogCategoriesPage({ searchParams }: Props) {
           <PaginationLinks basePath="/admin/blog/categories" page={pagination.page} pageCount={pagination.pageCount} params={filterParams} />
         </div>
 
-        <AdminFormSection title={selectedCategory ? "Chinh sua category" : "Tao category moi"}>
+        <AdminFormSection title={selectedCategory ? t.blog.editCategoryTitle : t.blog.createCategoryTitle}>
           <form action={upsertCategoryAction} className="space-y-4">
             <input name="tenantId" type="hidden" value={selectedTenant.id} />
             <input name="categoryId" type="hidden" value={selectedCategory?.id ?? ""} />
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">{t.table.name}</Label>
               <Input defaultValue={selectedCategory?.name ?? ""} id="name" name="name" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
+              <Label htmlFor="slug">{t.table.slug}</Label>
               <Input defaultValue={selectedCategory?.slug ?? ""} id="slug" name="slug" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t.table.description}</Label>
               <Textarea defaultValue={selectedCategory?.description ?? ""} id="description" name="description" rows={5} />
             </div>
             <div className="flex items-center gap-2">
-              <SubmitButton>Luu category</SubmitButton>
+              <SubmitButton>{t.common.save}</SubmitButton>
               <Button asChild type="button" variant="ghost">
-                <Link href={`/admin/blog/categories?tenantId=${selectedTenant.id}`}>Tao moi</Link>
+                <Link href={`/admin/blog/categories?tenantId=${selectedTenant.id}`}>{t.common.create}</Link>
               </Button>
             </div>
           </form>

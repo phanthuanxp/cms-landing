@@ -23,8 +23,14 @@ const contactSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const origin = request.headers.get("origin");
+    const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+    if (origin && host && !origin.includes(host)) {
+      return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+    }
+
     const payload = contactSchema.parse(await request.json());
-    const sourceHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? payload.sourceHost;
+    const sourceHost = host ?? payload.sourceHost;
     const [tenant, page, protection] = await Promise.all([
       db.tenant.findFirst({
         where: {

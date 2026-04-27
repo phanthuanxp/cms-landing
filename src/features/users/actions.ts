@@ -117,6 +117,17 @@ export async function removeTenantMembershipAction(formData: FormData) {
   await requireRole(GlobalRole.SUPER_ADMIN, "/admin/users");
   const membershipId = getString(formData, "membershipId");
 
+  const membership = await db.tenantMembership.findFirst({
+    where: {
+      id: membershipId,
+      deletedAt: null
+    }
+  });
+
+  if (!membership) {
+    redirect(usersPath({ error: "Membership-khong-ton-tai" }));
+  }
+
   await db.tenantMembership.update({
     where: {
       id: membershipId

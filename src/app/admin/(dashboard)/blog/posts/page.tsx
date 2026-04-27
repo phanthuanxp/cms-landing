@@ -17,6 +17,7 @@ import { Select } from "@/components/ui/select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { getLocaleFromCookie, getTranslations } from "@/lib/i18n";
 import { formatDate, parseEnumSearchParam } from "@/lib/utils";
 import { requireAuth } from "@/server/auth/session";
 import { requireTenantAccess } from "@/server/auth/permissions";
@@ -29,13 +30,15 @@ type Props = {
 
 export default async function BlogPostsPage({ searchParams }: Props) {
   const user = await requireAuth("/admin/blog/posts");
+  const locale = await getLocaleFromCookie();
+  const t = getTranslations(locale);
   const rawParams = await searchParams;
   const params = parseListParams(rawParams);
   const editId = typeof rawParams.edit === "string" ? rawParams.edit : undefined;
   const { tenants, selectedTenant } = await resolveAdminTenant(user, params.tenantId || undefined);
 
   if (!selectedTenant) {
-    return <EmptyState description="Tai khoan nay chua duoc gan tenant nao." title="Khong co tenant" />;
+    return <EmptyState description={t.pages.noTenantDescription} title={t.pages.noTenant} />;
   }
 
   await requireTenantAccess(selectedTenant.id, {
@@ -116,19 +119,20 @@ export default async function BlogPostsPage({ searchParams }: Props) {
     <div className="space-y-6">
       <AdminPageHeader
         actions={<TenantPicker selectedTenantId={selectedTenant.id} tenants={tenants} />}
-        description="Quan ly bai viet, category, tags va SEO metadata trong pham vi tenant."
-        eyebrow="Blog"
-        title="Posts"
+        description={t.blog.postsDescription}
+        eyebrow={t.blog.postsEyebrow}
+        title={t.blog.postsTitle}
       />
 
       <DataTableToolbar
         q={params.q}
         status={params.status}
         tenantId={selectedTenant.id}
+        searchPlaceholder={t.searchToolbar.placeholder}
         statusOptions={[
-          { value: PublishStatus.DRAFT, label: "Draft" },
-          { value: PublishStatus.PUBLISHED, label: "Published" },
-          { value: PublishStatus.ARCHIVED, label: "Archived" }
+          { value: PublishStatus.DRAFT, label: t.status.draft },
+          { value: PublishStatus.PUBLISHED, label: t.status.published },
+          { value: PublishStatus.ARCHIVED, label: t.status.archived }
         ]}
       />
 
@@ -138,19 +142,19 @@ export default async function BlogPostsPage({ searchParams }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
+                  <TableHead>{t.table.title}</TableHead>
                   <TableHead>Category</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t.table.status}</TableHead>
                   <TableHead>Author</TableHead>
-                  <TableHead>Published</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t.status.published}</TableHead>
+                  <TableHead className="text-right">{t.table.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {posts.length === 0 ? (
                   <TableRow>
                     <TableCell className="p-0" colSpan={6}>
-                      <EmptyState description="Chua co bai viet nao khop voi bo loc hien tai." title="Khong co bai viet" />
+                      <EmptyState description={t.blog.emptyPostsDescription} title={t.blog.emptyPostsTitle} />
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -159,7 +163,7 @@ export default async function BlogPostsPage({ searchParams }: Props) {
                       <TableCell>
                         <div className="space-y-1">
                           <p className="font-medium text-stone-950">{post.title}</p>
-                          <p className="text-xs text-stone-500">{post.tagLinks.map((tag) => tag.blogTag.slug).join(", ") || "No tags"}</p>
+                          <p className="text-xs text-stone-500">{post.tagLinks.map((tag) => tag.blogTag.slug).join(", ") || t.blog.noTags}</p>
                         </div>
                       </TableCell>
                       <TableCell>{post.category.name}</TableCell>
@@ -171,13 +175,13 @@ export default async function BlogPostsPage({ searchParams }: Props) {
                       <TableCell>
                         <div className="flex justify-end gap-2">
                           <Button asChild size="sm" variant="outline">
-                            <Link href={`/admin/blog/posts?tenantId=${selectedTenant.id}&edit=${post.id}`}>Sua</Link>
+                            <Link href={`/admin/blog/posts?tenantId=${selectedTenant.id}&edit=${post.id}`}>{t.common.edit}</Link>
                           </Button>
                           <form action={softDeletePostAction}>
                             <input name="tenantId" type="hidden" value={selectedTenant.id} />
                             <input name="postId" type="hidden" value={post.id} />
-                            <ConfirmSubmitButton size="sm" variant="destructive">
-                              Xoa
+                            <ConfirmSubmitButton confirmationMessage={t.confirmDialog.defaultMessage} size="sm" variant="destructive">
+                              {t.common.delete}
                             </ConfirmSubmitButton>
                           </form>
                         </div>
@@ -193,19 +197,19 @@ export default async function BlogPostsPage({ searchParams }: Props) {
         </div>
 
         <AdminFormSection
-          description="Tags nhap theo danh sach phan tach boi dau phay. Category phai ton tai truoc khi tao bai viet."
-          title={selectedPost ? "Chinh sua bai viet" : "Tao bai viet moi"}
+          description={t.blog.postFormDescription}
+          title={selectedPost ? t.blog.editPostTitle : t.blog.createPostTitle}
         >
           <form action={upsertPostAction} className="space-y-4">
             <input name="tenantId" type="hidden" value={selectedTenant.id} />
             <input name="postId" type="hidden" value={selectedPost?.id ?? ""} />
 
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">{t.table.title}</Label>
               <Input defaultValue={selectedPost?.title ?? ""} id="title" name="title" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
+              <Label htmlFor="slug">{t.table.slug}</Label>
               <Input defaultValue={selectedPost?.slug ?? ""} id="slug" name="slug" />
             </div>
             <div className="space-y-2">
@@ -219,7 +223,7 @@ export default async function BlogPostsPage({ searchParams }: Props) {
             <div className="space-y-2">
               <Label htmlFor="categoryId">Category</Label>
               <Select defaultValue={selectedPost?.categoryId ?? categories[0]?.id ?? ""} id="categoryId" name="categoryId">
-                <option value="">Chon category</option>
+                <option value="">{t.common.select}</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -229,7 +233,7 @@ export default async function BlogPostsPage({ searchParams }: Props) {
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">{t.table.status}</Label>
                 <Select defaultValue={selectedPost?.status ?? PublishStatus.DRAFT} id="status" name="status">
                   {Object.values(PublishStatus).map((status) => (
                     <option key={status} value={status}>
@@ -261,9 +265,9 @@ export default async function BlogPostsPage({ searchParams }: Props) {
               <Textarea defaultValue={selectedPost?.seoDescription ?? ""} id="seoDescription" name="seoDescription" rows={3} />
             </div>
             <div className="flex items-center gap-2">
-              <SubmitButton>Luu bai viet</SubmitButton>
+              <SubmitButton>{t.common.save}</SubmitButton>
               <Button asChild type="button" variant="ghost">
-                <Link href={`/admin/blog/posts?tenantId=${selectedTenant.id}`}>Tao moi</Link>
+                <Link href={`/admin/blog/posts?tenantId=${selectedTenant.id}`}>{t.common.create}</Link>
               </Button>
             </div>
           </form>

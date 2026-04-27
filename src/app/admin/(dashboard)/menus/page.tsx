@@ -16,6 +16,7 @@ import { Select } from "@/components/ui/select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { getLocaleFromCookie, getTranslations } from "@/lib/i18n";
 import { formatDate } from "@/lib/utils";
 import { requireAuth } from "@/server/auth/session";
 import { requireTenantAccess } from "@/server/auth/permissions";
@@ -26,28 +27,22 @@ type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-const sampleMenuItems = [
-  {
-    label: "Trang chu",
-    href: "/",
-    sortOrder: 1
-  },
-  {
-    label: "Blog",
-    href: "/blog",
-    sortOrder: 2
-  }
-];
-
 export default async function MenusPage({ searchParams }: Props) {
   const user = await requireAuth("/admin/menus");
+  const locale = await getLocaleFromCookie();
+  const t = getTranslations(locale);
   const rawParams = await searchParams;
   const params = parseListParams(rawParams);
   const editId = typeof rawParams.edit === "string" ? rawParams.edit : undefined;
   const { tenants, selectedTenant } = await resolveAdminTenant(user, params.tenantId || undefined);
 
+  const sampleMenuItems = [
+    { label: t.menus.defaultHomeLabel, href: "/", sortOrder: 1 },
+    { label: t.menus.defaultBlogLabel, href: "/blog", sortOrder: 2 }
+  ];
+
   if (!selectedTenant) {
-    return <EmptyState description="Tai khoan nay chua duoc gan tenant nao." title="Khong co tenant" />;
+    return <EmptyState description={t.pages.noTenantDescription} title={t.pages.noTenant} />;
   }
 
   await requireTenantAccess(selectedTenant.id, {
@@ -133,12 +128,12 @@ export default async function MenusPage({ searchParams }: Props) {
     <div className="space-y-6">
       <AdminPageHeader
         actions={<TenantPicker selectedTenantId={selectedTenant.id} tenants={tenants} />}
-        description="Quan ly menus va menu items theo tenant. Items dung JSON de giai doan dau de maintain va validate de dang."
-        eyebrow="Navigation"
-        title="Menus"
+        description={t.menus.description}
+        eyebrow={t.menus.eyebrow}
+        title={t.menus.title}
       />
 
-      <DataTableToolbar q={params.q} tenantId={selectedTenant.id} />
+      <DataTableToolbar q={params.q} tenantId={selectedTenant.id} searchPlaceholder={t.searchToolbar.placeholder} />
 
       <div className="grid gap-6 xl:grid-cols-[1.7fr,1fr]">
         <div className="space-y-4">
@@ -146,19 +141,19 @@ export default async function MenusPage({ searchParams }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Slug</TableHead>
+                  <TableHead>{t.table.name}</TableHead>
+                  <TableHead>{t.table.slug}</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead>Items</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t.table.updated}</TableHead>
+                  <TableHead className="text-right">{t.table.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {menus.length === 0 ? (
                   <TableRow>
                     <TableCell className="p-0" colSpan={6}>
-                      <EmptyState description="Chua co menu nao khop voi bo loc hien tai." title="Khong co menu" />
+                      <EmptyState description={t.menus.emptyDescription} title={t.menus.emptyTitle} />
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -172,13 +167,13 @@ export default async function MenusPage({ searchParams }: Props) {
                       <TableCell>
                         <div className="flex justify-end gap-2">
                           <Button asChild size="sm" variant="outline">
-                            <Link href={`/admin/menus?tenantId=${selectedTenant.id}&edit=${menu.id}`}>Sua</Link>
+                            <Link href={`/admin/menus?tenantId=${selectedTenant.id}&edit=${menu.id}`}>{t.common.edit}</Link>
                           </Button>
                           <form action={softDeleteMenuAction}>
                             <input name="tenantId" type="hidden" value={selectedTenant.id} />
                             <input name="menuId" type="hidden" value={menu.id} />
-                            <ConfirmSubmitButton size="sm" variant="destructive">
-                              Xoa
+                            <ConfirmSubmitButton confirmationMessage={t.confirmDialog.defaultMessage} size="sm" variant="destructive">
+                              {t.common.delete}
                             </ConfirmSubmitButton>
                           </form>
                         </div>
@@ -193,18 +188,18 @@ export default async function MenusPage({ searchParams }: Props) {
         </div>
 
         <AdminFormSection
-          description="Nhap menu items dang JSON array. Ho tro item cha-con 1 cap qua truong children."
-          title={selectedMenu ? "Chinh sua menu" : "Tao menu moi"}
+          description={t.menus.formDescription}
+          title={selectedMenu ? t.menus.editTitle : t.menus.createTitle}
         >
           <form action={upsertMenuAction} className="space-y-4">
             <input name="tenantId" type="hidden" value={selectedTenant.id} />
             <input name="menuId" type="hidden" value={selectedMenu?.id ?? ""} />
             <div className="space-y-2">
-              <Label htmlFor="name">Menu name</Label>
+              <Label htmlFor="name">{t.table.name}</Label>
               <Input defaultValue={selectedMenu?.name ?? ""} id="name" name="name" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
+              <Label htmlFor="slug">{t.table.slug}</Label>
               <Input defaultValue={selectedMenu?.slug ?? ""} id="slug" name="slug" />
             </div>
             <div className="space-y-2">
@@ -218,7 +213,7 @@ export default async function MenusPage({ searchParams }: Props) {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t.table.description}</Label>
               <Textarea defaultValue={selectedMenu?.description ?? ""} id="description" name="description" rows={3} />
             </div>
             <div className="space-y-2">
@@ -226,9 +221,9 @@ export default async function MenusPage({ searchParams }: Props) {
               <Textarea defaultValue={JSON.stringify(selectedMenuItems, null, 2)} id="items" name="items" rows={16} />
             </div>
             <div className="flex items-center gap-2">
-              <SubmitButton>Luu menu</SubmitButton>
+              <SubmitButton>{t.common.save}</SubmitButton>
               <Button asChild type="button" variant="ghost">
-                <Link href={`/admin/menus?tenantId=${selectedTenant.id}`}>Tao moi</Link>
+                <Link href={`/admin/menus?tenantId=${selectedTenant.id}`}>{t.common.create}</Link>
               </Button>
             </div>
           </form>
