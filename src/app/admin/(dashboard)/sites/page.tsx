@@ -226,7 +226,7 @@ export default async function SitesPage({ searchParams }: Props) {
           </AdminFormSection>
 
           <AdminFormSection
-            description={t.sites.noDomainsDescription}
+            description={t.sites.domainsDescription}
             title={t.sites.domainsTitle}
           >
             {selectedTenant ? (

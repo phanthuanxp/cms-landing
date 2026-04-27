@@ -137,6 +137,7 @@ export const en: TranslationDictionary = {
     editTitle: "Edit tenant",
     formDescription: "Basic tenant info: site name, SEO defaults, business info, and status.",
     domainsTitle: "Domains",
+    domainsDescription: "Add, remove, and select the primary domain for the currently selected tenant.",
     noDomainsTitle: "No domains",
     noDomainsDescription: "This tenant has no domains yet.",
     noTenantForDomains: "No tenant",

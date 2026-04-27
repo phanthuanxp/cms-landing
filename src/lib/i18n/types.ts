@@ -147,6 +147,7 @@ export type TranslationDictionary = {
     editTitle: string;
     formDescription: string;
     domainsTitle: string;
+    domainsDescription: string;
     noDomainsTitle: string;
     noDomainsDescription: string;
     noTenantForDomains: string;

@@ -137,6 +137,7 @@ export const vi: TranslationDictionary = {
     editTitle: "Chinh sua tenant",
     formDescription: "Thong tin co ban cua tenant: site name, SEO defaults, business info va status.",
     domainsTitle: "Domains",
+    domainsDescription: "Them, xoa va chon primary domain cho tenant dang duoc mo.",
     noDomainsTitle: "Chua co domain",
     noDomainsDescription: "Tenant nay chua co domain nao.",
     noTenantForDomains: "Chua co tenant",

@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   try {
     const origin = request.headers.get("origin");
     const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-    if (origin && host && !origin.includes(host)) {
+    if (origin && host && new URL(origin).host !== host) {
       return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
     }
 
