@@ -127,6 +127,8 @@ model Tenant {
   menus             Menu[]
   menuItems         MenuItem[]
   mediaAssets       MediaAsset[]
+  trackingConfig    TrackingConfig?
+  analyticsEvents   AnalyticsEvent[]
   authSessions      AuthSession[]
   auditLogs         AuditLog[]
 
@@ -346,27 +348,44 @@ model BlogPostTag {
 }
 
 model Lead {
-  id          String      @id @default(cuid())
-  tenantId    String
-  pageId      String?
-  name        String
-  email       String?
-  phone       String?
-  company     String?
-  message     String?
-  sourcePath  String?
-  sourceHost  String?
-  metadata    Json?
-  status      LeadStatus  @default(NEW)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  deletedAt   DateTime?
-  createdById String?
-  updatedById String?
-  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  page        Page?       @relation(fields: [pageId], references: [id], onDelete: SetNull)
+  id                  String      @id @default(cuid())
+  tenantId            String
+  pageId              String?
+  name                String
+  email               String?
+  phone               String?
+  company             String?
+  message             String?
+  formType            String?
+  sourcePath          String?
+  sourceHost          String?
+  metadata            Json?
+  status              LeadStatus  @default(NEW)
+  utmSource           String?
+  utmMedium           String?
+  utmCampaign         String?
+  utmTerm             String?
+  utmContent          String?
+  gclid               String?
+  gbraid              String?
+  wbraid              String?
+  fbclid              String?
+  ttclid              String?
+  landingPage         String?
+  conversionPage      String?
+  locale              String?
+  deviceType          String?
+  conversionEventType String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  deletedAt           DateTime?
+  createdById         String?
+  updatedById         String?
+  tenant              Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  page                Page?       @relation(fields: [pageId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, status, createdAt, deletedAt])
+  @@index([tenantId, utmSource, utmCampaign])
 }
 
 model Menu {
@@ -433,6 +452,51 @@ model MediaAsset {
   tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, status, deletedAt])
+}
+
+model TrackingConfig {
+  id                      String   @id @default(cuid())
+  tenantId                String   @unique
+  ga4MeasurementId        String?
+  gtmId                   String?
+  googleAdsConversionId   String?
+  googleAdsConversionLabels Json?
+  metaPixelId             String?
+  tiktokPixelId           String?
+  customHeadScript        String?  @db.Text
+  customBodyScript        String?  @db.Text
+  enableInternalAnalytics Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  createdById             String?
+  updatedById             String?
+  tenant                  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model AnalyticsEvent {
+  id          String   @id @default(cuid())
+  tenantId    String
+  siteId      String?
+  eventName   String
+  path        String?
+  locale      String?
+  referrer    String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmTerm     String?
+  utmContent  String?
+  gclid       String?
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  sessionId   String?
+  createdAt   DateTime @default(now())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, eventName, createdAt])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, utmSource, utmCampaign])
 }
 
 model AuditLog {

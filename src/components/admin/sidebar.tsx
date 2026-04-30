@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FolderTree, Globe, ImageIcon, Inbox, LayoutDashboard, MenuSquare, Newspaper, Settings, FileText, Users } from "lucide-react";
+import { BarChart3, FolderTree, Globe, ImageIcon, Inbox, LayoutDashboard, MenuSquare, Newspaper, Radio, Settings, FileText, Users } from "lucide-react";
 
 import { isSuperAdmin } from "@/server/auth/permissions";
 import type { CurrentUser } from "@/server/auth/session";
@@ -16,6 +16,8 @@ const navGroups = [
   { href: "/admin/menus", label: "Menus", icon: MenuSquare, roles: ["CONTENT"] },
   { href: "/admin/leads", label: "Leads", icon: Inbox, roles: ["CONTENT"] },
   { href: "/admin/media", label: "Media", icon: ImageIcon, roles: ["CONTENT"] },
+  { href: "/admin/tracking", label: "Tracking", icon: Radio, roles: ["TENANT_ADMIN"] },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3, roles: ["CONTENT"] },
   { href: "/admin/settings", label: "Settings", icon: Settings, roles: ["TENANT_ADMIN"] }
 ] satisfies Array<{ href: string; label: string; icon: typeof LayoutDashboard; roles: NavAccess[] }>;
 
