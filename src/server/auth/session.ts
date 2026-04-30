@@ -72,12 +72,17 @@ export async function createSession(
   });
 
   const cookieStore = await cookies();
+  const headerStore = await headers();
+  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host") ?? "";
+  const domain = host.replace(/:\d+$/, "");
+
   cookieStore.set(env.SESSION_COOKIE_NAME, rawToken, {
     httpOnly: true,
     sameSite: "lax",
     secure: env.APP_ENV === "production",
     path: "/",
-    expires: expiresAt
+    expires: expiresAt,
+    ...(domain && !domain.includes("localhost") ? { domain } : {})
   });
 }
 

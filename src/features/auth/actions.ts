@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { checkLoginRateLimit } from "@/server/auth/rate-limit";
 import { createSession } from "@/server/auth/session";
 import { db } from "@/server/db/client";
 import { createAuditLog } from "@/server/services/audit";
@@ -20,6 +21,13 @@ const loginSchema = z.object({
 });
 
 export async function loginAction(formData: FormData) {
+  const headerStore = await headers();
+  const ip = headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const { allowed } = checkLoginRateLimit(ip);
+  if (!allowed) {
+    redirect("/admin/login?error=Qua-nhieu-lan-dang-nhap-hay-thu-lai-sau");
+  }
+
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -57,7 +65,6 @@ export async function loginAction(formData: FormData) {
     redirect("/admin/login?error=Sai-email-hoac-mat-khau");
   }
 
-  const headerStore = await headers();
   const defaultTenantId = user.tenantMemberships[0]?.tenantId ?? null;
 
   await createSession(user.id, {

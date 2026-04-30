@@ -1,23 +1,26 @@
 import Link from "next/link";
 import { FolderTree, Globe, ImageIcon, Inbox, LayoutDashboard, MenuSquare, Newspaper, Settings, FileText, Users } from "lucide-react";
 
+import { type Locale, getTranslations } from "@/lib/i18n";
 import { isSuperAdmin } from "@/server/auth/permissions";
 import type { CurrentUser } from "@/server/auth/session";
 
 type NavAccess = "ALL" | "SUPER_ADMIN" | "TENANT_ADMIN" | "CONTENT";
 
-const navGroups = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["ALL"] },
-  { href: "/admin/sites", label: "Sites", icon: Globe, roles: ["SUPER_ADMIN"] },
-  { href: "/admin/users", label: "Users", icon: Users, roles: ["SUPER_ADMIN"] },
-  { href: "/admin/pages", label: "Landing Pages", icon: FileText, roles: ["CONTENT"] },
-  { href: "/admin/blog/categories", label: "Blog Categories", icon: FolderTree, roles: ["CONTENT"] },
-  { href: "/admin/blog/posts", label: "Blog Posts", icon: Newspaper, roles: ["CONTENT"] },
-  { href: "/admin/menus", label: "Menus", icon: MenuSquare, roles: ["CONTENT"] },
-  { href: "/admin/leads", label: "Leads", icon: Inbox, roles: ["CONTENT"] },
-  { href: "/admin/media", label: "Media", icon: ImageIcon, roles: ["CONTENT"] },
-  { href: "/admin/settings", label: "Settings", icon: Settings, roles: ["TENANT_ADMIN"] }
-] satisfies Array<{ href: string; label: string; icon: typeof LayoutDashboard; roles: NavAccess[] }>;
+type NavKey = "dashboard" | "sites" | "users" | "landingPages" | "blogCategories" | "blogPosts" | "menus" | "leads" | "media" | "settings";
+
+const navGroups: Array<{ href: string; key: NavKey; icon: typeof LayoutDashboard; roles: NavAccess[] }> = [
+  { href: "/admin/dashboard", key: "dashboard", icon: LayoutDashboard, roles: ["ALL"] },
+  { href: "/admin/sites", key: "sites", icon: Globe, roles: ["SUPER_ADMIN"] },
+  { href: "/admin/users", key: "users", icon: Users, roles: ["SUPER_ADMIN"] },
+  { href: "/admin/pages", key: "landingPages", icon: FileText, roles: ["CONTENT"] },
+  { href: "/admin/blog/categories", key: "blogCategories", icon: FolderTree, roles: ["CONTENT"] },
+  { href: "/admin/blog/posts", key: "blogPosts", icon: Newspaper, roles: ["CONTENT"] },
+  { href: "/admin/menus", key: "menus", icon: MenuSquare, roles: ["CONTENT"] },
+  { href: "/admin/leads", key: "leads", icon: Inbox, roles: ["CONTENT"] },
+  { href: "/admin/media", key: "media", icon: ImageIcon, roles: ["CONTENT"] },
+  { href: "/admin/settings", key: "settings", icon: Settings, roles: ["TENANT_ADMIN"] }
+];
 
 function canViewItem(user: CurrentUser, item: (typeof navGroups)[number]) {
   if (item.roles.some((role) => role === "ALL")) {
@@ -39,15 +42,16 @@ function canViewItem(user: CurrentUser, item: (typeof navGroups)[number]) {
   return false;
 }
 
-export function AdminSidebar({ user }: { user: CurrentUser }) {
+export function AdminSidebar({ user, locale }: { user: CurrentUser; locale: Locale }) {
+  const t = getTranslations(locale);
   const items = navGroups.filter((item) => canViewItem(user, item));
 
   return (
     <aside className="hidden w-72 border-r border-stone-200 bg-stone-950 text-stone-200 lg:block">
       <div className="sticky top-0 flex min-h-screen flex-col p-6">
         <div className="space-y-2 border-b border-stone-800 pb-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-stone-500">Admin CMS</p>
-          <h1 className="text-xl font-semibold text-white">Multi-tenant Control</h1>
+          <p className="text-xs uppercase tracking-[0.24em] text-stone-500">{t.sidebar.title}</p>
+          <h1 className="text-xl font-semibold text-white">{t.sidebar.subtitle}</h1>
         </div>
         <nav className="mt-6 flex flex-col gap-1">
           {items.map((item) => {
@@ -59,7 +63,7 @@ export function AdminSidebar({ user }: { user: CurrentUser }) {
                 key={item.href}
               >
                 <Icon className="h-4 w-4" />
-                {item.label}
+                {t.sidebar[item.key]}
               </Link>
             );
           })}
