@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
         hostname: "**"
       }
     ]
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/admincp/:path*",
+        destination: "/admin/:path*"
+      }
+    ];
   }
 };
 
