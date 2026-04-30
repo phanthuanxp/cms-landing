@@ -10,9 +10,9 @@ const envSchema = z.object({
 });
 
 export const env = envSchema.parse({
-  DATABASE_URL: process.env.DATABASE_URL,
+  DATABASE_URL: process.env.DATABASE_URL ?? process.env.POSTGRES_PRISMA_URL ?? process.env.POSTGRES_URL,
   SESSION_COOKIE_NAME: process.env.SESSION_COOKIE_NAME,
-  SESSION_SECRET: process.env.SESSION_SECRET,
+  SESSION_SECRET: process.env.SESSION_SECRET ?? process.env.AUTH_SECRET,
   APP_ENV: process.env.APP_ENV,
   DEFAULT_SITE_DOMAIN: process.env.DEFAULT_SITE_DOMAIN,
   CONTENT_API_KEY: process.env.CONTENT_API_KEY
