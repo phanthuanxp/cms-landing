@@ -5,7 +5,8 @@ const envSchema = z.object({
   SESSION_COOKIE_NAME: z.string().min(1).default("cms_admin_session"),
   SESSION_SECRET: z.string().min(32),
   APP_ENV: z.string().default("development"),
-  DEFAULT_SITE_DOMAIN: z.string().default("localhost:3000")
+  DEFAULT_SITE_DOMAIN: z.string().default("localhost:3000"),
+  CONTENT_API_KEY: z.string().optional()
 });
 
 export const env = envSchema.parse({
@@ -13,5 +14,6 @@ export const env = envSchema.parse({
   SESSION_COOKIE_NAME: process.env.SESSION_COOKIE_NAME,
   SESSION_SECRET: process.env.SESSION_SECRET,
   APP_ENV: process.env.APP_ENV,
-  DEFAULT_SITE_DOMAIN: process.env.DEFAULT_SITE_DOMAIN
+  DEFAULT_SITE_DOMAIN: process.env.DEFAULT_SITE_DOMAIN,
+  CONTENT_API_KEY: process.env.CONTENT_API_KEY
 });
